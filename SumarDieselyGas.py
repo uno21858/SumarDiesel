@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
 
 # Funciones de procesamiento de datos
-def sacar_fecha(file_path):
+def sacar_datos(file_path):
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -12,11 +12,13 @@ def sacar_fecha(file_path):
 
         if root.tag.endswith('Comprobante'):
             fecha = root.attrib.get('Fecha', 'Fecha no encontrada')
+            folio = root.attrib.get('Folio', 'Folio no encontrado')
         else:
             comprobante = root.find('.//cfdi:Comprobante', namespaces)
             fecha = comprobante.attrib.get('Fecha', 'Fecha no encontrada') if comprobante is not None else 'Fecha no encontrada'
+            folio = comprobante.attrib.get('Folio', 'Folio no encontrado') if comprobante is not None else 'Folio no encontrado'
 
-        return fecha
+        return fecha, folio
     except Exception as e:
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
         return "Desconocido"
@@ -53,11 +55,12 @@ def open_file():
     file_path = filedialog.askopenfilename(filetypes=[("Archivos XML", "*.xml")])
     if file_path:
         diesel_liters, diesel_price, gasoline_price = extract_fuel_data(file_path)
-        diesel_liters_label.config(text=f"Total de litros de diésel: {diesel_liters:,.3f}")
+        diesel_liters_label.config(text=f"Total de litros de diesel: {diesel_liters:,.3f}")
         diesel_price_label.config(text=f"Total del precio del diésel: ${diesel_price:,.2f}")
         gasoline_price_label.config(text=f"Total del precio de la gasolina: ${gasoline_price:,.2f}")
-        fecha = sacar_fecha(file_path)
-        fecha_label.config(text=f"Fecha de la factura: {fecha}")
+        fecha, folio = sacar_datos(file_path)
+        fecha_label.config(text=f"Fecha de la factura: {fecha[:10]}")
+        folio_label.config(text=f"Folio de la factura: D{folio}")
 
 # Configuración de la interfaz grafica
 root = tk.Tk()
@@ -72,6 +75,9 @@ title_label.pack()
 
 fecha_label = tk.Label(header_frame, text="Fecha de la factura: ", font=("Arial", 14))
 fecha_label.pack()
+
+folio_label = tk.Label(header_frame, text="Folio de la factura: ", font=("Arial", 14))
+folio_label.pack()
 
 # Contenido principal
 content_frame = tk.Frame(root, padx=10, pady=10)
