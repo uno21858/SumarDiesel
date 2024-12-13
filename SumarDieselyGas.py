@@ -1,6 +1,19 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
+from datetime import datetime
+
+
+def traducir_mes(fecha):
+    meses = {
+        "January": "enero", "February": "febrero", "March": "marzo", "April": "abril",
+        "May": "mayo", "June": "junio", "July": "julio", "August": "agosto",
+        "September": "septiembre", "October": "octubre", "November": "noviembre", "December": "diciembre"
+    }
+    for ingles, espanol in meses.items():
+        fecha = fecha.replace(ingles, espanol)
+    return fecha
+
 
 # Funciones de procesamiento de datos
 def sacar_datos(file_path):
@@ -10,18 +23,28 @@ def sacar_datos(file_path):
 
         namespaces = {'cfdi': 'http://www.sat.gob.mx/cfd/4'}
 
-        if root.tag.endswith('Comprobante'):
-            fecha = root.attrib.get('Fecha', 'Fecha no encontrada')
-            folio = root.attrib.get('Folio', 'Folio no encontrado')
-        else:
-            comprobante = root.find('.//cfdi:Comprobante', namespaces)
-            fecha = comprobante.attrib.get('Fecha', 'Fecha no encontrada') if comprobante is not None else 'Fecha no encontrada'
-            folio = comprobante.attrib.get('Folio', 'Folio no encontrado') if comprobante is not None else 'Folio no encontrado'
+        # Intentar obtener el nodo <Comprobante>
+        comprobante = root if root.tag.endswith('Comprobante') else root.find('.//cfdi:Comprobante', namespaces)
 
-        return fecha, folio
+        if comprobante is not None:
+            fecha_original = comprobante.attrib.get('Fecha', 'Fecha no encontrada')
+            folio = comprobante.attrib.get('Folio', 'Folio no encontrado')
+
+            # Formatear la fecha si se encuentra
+            if fecha_original != 'Fecha no encontrada':
+                fecha_formateada = datetime.strptime(fecha_original[:10], "%Y-%m-%d").strftime("%d de %B %Y")
+            else:
+                fecha_formateada = "Fecha no encontrada"
+        else:
+            fecha_formateada = "Fecha no encontrada"
+            folio = "Folio no encontrado"
+
+        fecha_formateada = traducir_mes(fecha_formateada)
+        return fecha_formateada, folio
+
     except Exception as e:
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
-        return "Desconocido"
+        return "Desconocido", "Desconocido"
 
 def extract_fuel_data(file_path):
     try:
@@ -59,7 +82,7 @@ def open_file():
         diesel_price_label.config(text=f"Total del precio del diésel: ${diesel_price:,.2f}")
         gasoline_price_label.config(text=f"Total del precio de la gasolina: ${gasoline_price:,.2f}")
         fecha, folio = sacar_datos(file_path)
-        fecha_label.config(text=f"Fecha de la factura: {fecha[:10]}")
+        fecha_label.config(text=f"Fecha de la factura: {fecha}")
         folio_label.config(text=f"Folio de la factura: D{folio}")
 
 # Configuración de la interfaz grafica
