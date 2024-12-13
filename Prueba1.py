@@ -59,7 +59,7 @@ def open_file():
         fecha = sacar_fecha(file_path)
         fecha_label.config(text=f"Fecha de la factura: {fecha}")
 
-# Configuración de la interfaz gráfica
+# Configuración de la interfaz grafica
 root = tk.Tk()
 root.title("Sumador de Combustibles desde Facturas XML")
 
