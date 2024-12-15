@@ -14,6 +14,29 @@ def traducir_mes(fecha):
         fecha = fecha.replace(ingles, espanol)
     return fecha
 
+def verificar_proveedor(file_path):
+    """
+    Verifica si el archivo pertenece a la gasolinera Colón mediante su nombre.
+    """
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        namespaces = {'cfdi': 'http://www.sat.gob.mx/cfd/4'}
+
+        receptor = root.find('.//cfdi:Emisor', namespaces)
+        if receptor is not None:
+            nombre = receptor.attrib.get('Nombre', '').upper()
+            if nombre == "#nombre del proveedor":
+                return True
+            else:
+                messagebox.showwarning("Advertencia", f"La factura no pertenece a la gasolinera Colón.\nnombre del proveedor encontrado: \n{nombre}")
+                return False
+        else:
+            messagebox.showerror("Error", "No se encontró el nodo Receptor en el archivo XML.")
+            return False
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
+        return False
 
 def verificar_rfc(file_path):
     """
@@ -27,7 +50,7 @@ def verificar_rfc(file_path):
         receptor = root.find('.//cfdi:Receptor', namespaces)
         if receptor is not None:
             rfc = receptor.attrib.get('Rfc', '').upper()
-            if rfc == 'GCO740121MC5' or rfc == 'TSB740430489':
+            if rfc == '#Rfc proveedor' or rfc == '#RFC empresa':
                 return True
             else:
                 messagebox.showwarning("Advertencia", f"La factura no pertenece a la gasolinera Colón.\nRFC encontrado: {rfc}")
@@ -102,18 +125,18 @@ def extract_fuel_data(file_path):
 
 def open_file():
     """
-    Abre un archivo XML, verifica su RFC y extrae la información si es válida.
+    Abre un archivo XML, verifica su RFC con proveedor y extrae la información si es válida.
     """
     file_path = filedialog.askopenfilename(filetypes=[("Archivos XML", "*.xml")])
     if file_path:
-        if verificar_rfc(file_path):
+        if verificar_rfc(file_path) and verificar_proveedor(file_path):
             diesel_liters, diesel_price, gasoline_price = extract_fuel_data(file_path)
             diesel_liters_label.config(text=f"Total de litros de diesel: {diesel_liters:,.3f}")
             diesel_price_label.config(text=f"Total del precio del diésel: ${diesel_price:,.2f}")
             gasoline_price_label.config(text=f"Total del precio de la gasolina: ${gasoline_price:,.2f}")
             fecha, folio = sacar_datos(file_path)
             fecha_label.config(text=f"Fecha de la factura: {fecha}")
-            folio_label.config(text=f"Folio de la factura: {folio}")
+            folio_label.config(text=f"Folio de la factura: D{folio}")
 
 
 # Configuración de la interfaz gráfica
