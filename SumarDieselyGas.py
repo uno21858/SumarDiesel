@@ -1,8 +1,8 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
 from datetime import datetime
-
+import ctypes
 
 def traducir_mes(fecha):
     meses = {
@@ -15,9 +15,6 @@ def traducir_mes(fecha):
     return fecha
 
 def verificar_proveedor(file_path):
-    """
-    Verifica si el archivo pertenece a la gasolinera Colón mediante su nombre.
-    """
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -26,22 +23,19 @@ def verificar_proveedor(file_path):
         receptor = root.find('.//cfdi:Emisor', namespaces)
         if receptor is not None:
             nombre = receptor.attrib.get('Nombre', '').upper()
-            if nombre == "#nombre del proveedor":
+            if nombre == "GASOLINERA COLON":
                 return True
             else:
-                messagebox.showwarning("Advertencia", f"La factura no pertenece a la gasolinera Colón.\nnombre del proveedor encontrado: \n{nombre}")
+                messagebox.showwarning("Advertencia", f"La factura no pertenece a la gasolinera Colón.\nNombre del proveedor encontrado: \n{nombre}")
                 return False
         else:
-            messagebox.showerror("Error", "No se encontró el nodo Receptor en el archivo XML.")
+            messagebox.showerror("Error", "No se encontró el nodo Emisor en el archivo XML.")
             return False
     except Exception as e:
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
         return False
 
 def verificar_rfc(file_path):
-    """
-    Verifica si el archivo pertenece a la gasolinera Colón (RFC: GCO740121MC5).
-    """
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -50,7 +44,7 @@ def verificar_rfc(file_path):
         receptor = root.find('.//cfdi:Receptor', namespaces)
         if receptor is not None:
             rfc = receptor.attrib.get('Rfc', '').upper()
-            if rfc == '#Rfc proveedor' or rfc == '#RFC empresa':
+            if rfc == 'GCO740121MC5' or rfc == 'TSB740430489':
                 return True
             else:
                 messagebox.showwarning("Advertencia", f"La factura no pertenece a la gasolinera Colón.\nRFC encontrado: {rfc}")
@@ -62,11 +56,7 @@ def verificar_rfc(file_path):
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
         return False
 
-
 def sacar_datos(file_path):
-    """
-    Extrae la fecha y el folio del archivo XML.
-    """
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -92,11 +82,7 @@ def sacar_datos(file_path):
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
         return "Desconocido", "Desconocido"
 
-
 def extract_fuel_data(file_path):
-    """
-    Extrae la información de combustibles (litros y precios) del archivo XML.
-    """
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -122,67 +108,69 @@ def extract_fuel_data(file_path):
         messagebox.showerror("Error", f"Error al procesar el archivo: {e}")
         return 0, 0, 0
 
-
 def open_file():
-    """
-    Abre un archivo XML, verifica su RFC con proveedor y extrae la información si es válida.
-    """
     file_path = filedialog.askopenfilename(filetypes=[("Archivos XML", "*.xml")])
     if file_path:
         if verificar_rfc(file_path) and verificar_proveedor(file_path):
             diesel_liters, diesel_price, gasoline_price = extract_fuel_data(file_path)
-            diesel_liters_label.config(text=f"Total de litros de diesel: {diesel_liters:,.3f}")
-            diesel_price_label.config(text=f"Total del precio del diésel: ${diesel_price:,.2f}")
-            gasoline_price_label.config(text=f"Total del precio de la gasolina: ${gasoline_price:,.2f}")
+            diesel_liters_label.configure(text=f"Total de litros de diésel: {diesel_liters:,.3f}")
+            diesel_price_label.configure(text=f"Total del precio del diésel: ${diesel_price:,.2f}")
+            gasoline_price_label.configure(text=f"Total del precio de la gasolina: ${gasoline_price:,.2f}")
             fecha, folio = sacar_datos(file_path)
-            fecha_label.config(text=f"Fecha de la factura: {fecha}")
-            folio_label.config(text=f"Folio de la factura: D{folio}")
+            fecha_label.configure(text=f"Fecha de la factura: {fecha}")
+            folio_label.configure(text=f"Folio de la factura: {folio}")
 
+# configureuración de la interfaz gráfica
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("blue")
 
-# Configuración de la interfaz gráfica
-root = tk.Tk()
+root = ctk.CTk()
 root.title("Sumador de Combustibles desde Facturas XML")
 
 # Encabezado
-header_frame = tk.Frame(root, padx=10, pady=10)
+header_frame = ctk.CTkFrame(root)
 header_frame.pack(fill="x")
 
-title_label = tk.Label(header_frame, text="Sumador de Diesel y Gas", font=("Arial", 16, "bold"))
-title_label.pack()
+title_label = ctk.CTkLabel(header_frame, text="Sumador de Diesel y Gas", font=("Arial", 20, "bold"))
+title_label.pack(padx=10, pady=10)
 
-fecha_label = tk.Label(header_frame, text="Fecha de la factura: ", font=("Arial", 14))
-fecha_label.pack()
+fecha_label = ctk.CTkLabel(header_frame, text="Fecha de la factura: ", font=("Arial", 18))
+fecha_label.pack(padx=10, pady=5)
 
-folio_label = tk.Label(header_frame, text="Folio de la factura: ", font=("Arial", 14))
-folio_label.pack()
+folio_label = ctk.CTkLabel(header_frame, text="Folio de la factura: ", font=("Arial", 18))
+folio_label.pack(padx=10, pady=5)
 
 # Contenido principal
-content_frame = tk.Frame(root, padx=10, pady=10)
-content_frame.pack(fill="both", expand=False)
+content_frame = ctk.CTkFrame(root)
+content_frame.pack(fill="both", expand=True)
 
-diesel_liters_label = tk.Label(content_frame, text="Total de litros de diésel: 0.00", font=("Arial", 12))
+diesel_liters_label = ctk.CTkLabel(content_frame, text="Total de litros de diésel: 0.00", font=("Arial", 16))
 diesel_liters_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
 
-diesel_price_label = tk.Label(content_frame, text="Total del precio del diésel: $0.00", font=("Arial", 12))
+diesel_price_label = ctk.CTkLabel(content_frame, text="Total del precio del diésel: $0.00", font=("Arial", 16))
 diesel_price_label.grid(row=2, column=0, sticky="w", padx=5, pady=5)
 
-gasoline_price_label = tk.Label(content_frame, text="Total del precio de la gasolina: $0.00", font=("Arial", 12))
+gasoline_price_label = ctk.CTkLabel(content_frame, text="Total del precio de la gasolina: $0.00", font=("Arial", 16))
 gasoline_price_label.grid(row=3, column=0, sticky="w", padx=5, pady=5)
 
 # Botones
-button_frame = tk.Frame(root, padx=10, pady=10)
+button_frame = ctk.CTkFrame(root)
 button_frame.pack(fill="x")
 
-open_button = tk.Button(button_frame, text="Abrir Archivo XML", command=open_file, font=("Arial", 12))
-open_button.grid(row=0, column=0, padx=5)
+open_button = ctk.CTkButton(button_frame, text="Abrir Archivo XML", command=open_file, font=("Arial", 16))
+open_button.grid(row=0, column=0, padx=20, pady=20)
 
-exit_button = tk.Button(button_frame, text="Salir", command=root.quit, font=("Arial", 12))
-exit_button.grid(row=0, column=1, padx=5)
+exit_button = ctk.CTkButton(button_frame, text="Salir", command=root.quit, font=("Arial", 16))
+exit_button.grid(row=0, column=1, padx=20, pady=20)
 
 # Ajustar las columnas en los frames
 button_frame.grid_columnconfigure(0, weight=1)
 button_frame.grid_columnconfigure(1, weight=1)
 content_frame.grid_columnconfigure(0, weight=1)
 
+myappid = 'mycompany.myproduct.subproduct.version'
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
 # Iniciar el bucle principal
+root.iconbitmap('icon.ico')
 root.mainloop()
